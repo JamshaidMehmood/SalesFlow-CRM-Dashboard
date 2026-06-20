@@ -1,0 +1,338 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  sales_rep
+}
+
+enum ContactStatus {
+  lead
+  prospect
+  customer
+  inactive
+}
+
+enum ScoreTier {
+  hot
+  warm
+  cold
+}
+
+enum CustomFieldType {
+  text
+  number
+  select
+  date
+}
+
+enum ActivityType {
+  call
+  email
+  meeting
+  note
+}
+
+enum TaskStatus {
+  pending
+  done
+}
+
+enum LostReason {
+  price_too_high
+  bad_timing
+  chose_competitor
+  no_budget
+  no_response
+  other
+}
+
+enum AuditEntityType {
+  contact
+  deal
+  task
+  tag
+  custom_field
+  attachment
+  user
+  team
+  territory
+}
+
+enum AuditAction {
+  create
+  update
+  delete
+  merge
+  reassign
+}
+
+model User {
+  id                       String            @id @default(cuid())
+  name                     String
+  email                    String            @unique
+  passwordHash             String            @map("password_hash")
+  googleId                 String?           @unique @map("google_id")
+  role                     Role              @default(sales_rep)
+  teamId                   String?           @map("team_id")
+  team                     Team?             @relation("TeamMembers", fields: [teamId], references: [id], onDelete: SetNull)
+  managedTeams             Team[]            @relation("TeamManager")
+  twoFactorEnabled         Boolean           @default(false) @map("two_factor_enabled")
+  twoFactorSecret          String?           @map("two_factor_secret")
+  twoFactorRecoveryCodes   String?           @map("two_factor_recovery_codes")
+  onboardingCompletedSteps Json              @default("[]") @map("onboarding_completed_steps")
+  onboardingDismissed      Boolean           @default(false) @map("onboarding_dismissed")
+  createdAt                DateTime          @default(now()) @map("created_at")
+  contacts                 Contact[]
+  deals                    Deal[]
+  activities               Activity[]
+  notes                    Note[]
+  tasks                    Task[]
+  quotas                   Quota[]
+  tagsCreated              Tag[]             @relation("TagCreator")
+  attachments              Attachment[]
+  mergeLogs                ContactMergeLog[]
+  auditLogs                AuditLog[]
+
+  @@map("users")
+}
+
+model Team {
+  id        String @id @default(cuid())
+  name      String @unique
+  managerId String? @map("manager_id")
+  manager   User?  @relation("TeamManager", fields: [managerId], references: [id], onDelete: SetNull)
+  members   User[] @relation("TeamMembers")
+
+  @@map("teams")
+}
+
+model Territory {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  contacts    Contact[]
+
+  @@map("territories")
+}
+
+model AuditLog {
+  id         String          @id @default(cuid())
+  actorId    String          @map("actor_id")
+  actor      User            @relation(fields: [actorId], references: [id])
+  entityType AuditEntityType @map("entity_type")
+  entityId   String          @map("entity_id")
+  action     AuditAction
+  changes    Json?
+  createdAt  DateTime        @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model LeadSource {
+  id         String    @id @default(cuid())
+  name       String    @unique
+  orderIndex Int       @map("order_index")
+  isActive   Boolean   @default(true) @map("is_active")
+  contacts   Contact[]
+
+  @@map("lead_sources")
+}
+
+model Tag {
+  id        String       @id @default(cuid())
+  name      String       @unique
+  color     String       @default("#0091ae")
+  createdBy String       @map("created_by")
+  creator   User         @relation("TagCreator", fields: [createdBy], references: [id])
+  contacts  ContactTag[]
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  @@map("tags")
+}
+
+model Contact {
+  id           String               @id @default(cuid())
+  ownerId      String               @map("owner_id")
+  owner        User                 @relation(fields: [ownerId], references: [id])
+  firstName    String               @map("first_name")
+  lastName     String               @map("last_name")
+  email        String
+  phone        String?
+  company      String?
+  jobTitle     String?              @map("job_title")
+  status       ContactStatus        @default(lead)
+  leadSourceId String?              @map("lead_source_id")
+  leadSource   LeadSource?          @relation(fields: [leadSourceId], references: [id])
+  territoryId  String?              @map("territory_id")
+  territory    Territory?           @relation(fields: [territoryId], references: [id], onDelete: SetNull)
+  score        Float                @default(0)
+  scoreTier    ScoreTier            @default(cold) @map("score_tier")
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+  deals        Deal[]
+  activities   Activity[]
+  notes        Note[]
+  tasks        Task[]
+  tags         ContactTag[]
+  customValues ContactCustomValue[]
+  attachments  Attachment[]
+
+  @@map("contacts")
+}
+
+model ContactTag {
+  contactId String  @map("contact_id")
+  tagId     String  @map("tag_id")
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, tagId])
+  @@map("contact_tags")
+}
+
+model CustomFieldDefinition {
+  id         String               @id @default(cuid())
+  label      String
+  fieldType  CustomFieldType      @map("field_type")
+  options    Json?
+  isRequired Boolean              @default(false) @map("is_required")
+  orderIndex Int                  @map("order_index")
+  deletedAt  DateTime?            @map("deleted_at")
+  values     ContactCustomValue[]
+
+  @@map("custom_field_definitions")
+}
+
+model ContactCustomValue {
+  contactId         String                @map("contact_id")
+  fieldDefinitionId String                @map("field_definition_id")
+  value             String
+  contact           Contact               @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  fieldDefinition   CustomFieldDefinition @relation(fields: [fieldDefinitionId], references: [id])
+
+  @@id([contactId, fieldDefinitionId])
+  @@map("contact_custom_values")
+}
+
+model ContactMergeLog {
+  id              String   @id @default(cuid())
+  mergedBy        String   @map("merged_by")
+  merger          User     @relation(fields: [mergedBy], references: [id])
+  survivorId      String   @map("survivor_id")
+  mergedContactId String   @map("merged_contact_id")
+  mergedSnapshot  Json     @map("merged_snapshot")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("contact_merge_logs")
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  contactId  String?  @map("contact_id")
+  dealId     String?  @map("deal_id")
+  filename   String
+  fileUrl    String   @map("file_url")
+  storageKey String   @map("storage_key")
+  mimeType   String   @map("mime_type")
+  fileSize   Int      @map("file_size")
+  uploadedBy String   @map("uploaded_by")
+  uploader   User     @relation(fields: [uploadedBy], references: [id])
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+  contact    Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  deal       Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
+}
+
+model PipelineStage {
+  id             String  @id @default(cuid())
+  name           String
+  orderIndex     Int     @map("order_index")
+  isWonStage     Boolean @default(false) @map("is_won_stage")
+  isLostStage    Boolean @default(false) @map("is_lost_stage")
+  winProbability Float   @default(0) @map("win_probability")
+  deals          Deal[]
+
+  @@map("pipeline_stages")
+}
+
+model Deal {
+  id                String        @id @default(cuid())
+  title             String
+  contactId         String        @map("contact_id")
+  contact           Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  ownerId           String        @map("owner_id")
+  owner             User          @relation(fields: [ownerId], references: [id])
+  stageId           String        @map("stage_id")
+  stage             PipelineStage @relation(fields: [stageId], references: [id])
+  value             Float         @default(0)
+  lostReason        LostReason?   @map("lost_reason")
+  lostReasonNote    String?       @map("lost_reason_note")
+  expectedCloseDate DateTime?     @map("expected_close_date")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+  attachments       Attachment[]
+
+  @@map("deals")
+}
+
+model Activity {
+  id        String       @id @default(cuid())
+  contactId String       @map("contact_id")
+  contact   Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  userId    String       @map("user_id")
+  user      User         @relation(fields: [userId], references: [id])
+  type      ActivityType
+  content   String
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  @@map("activities")
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  contactId String   @map("contact_id")
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  createdBy String   @map("created_by")
+  author    User     @relation(fields: [createdBy], references: [id])
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("notes")
+}
+
+model Task {
+  id        String     @id @default(cuid())
+  contactId String     @map("contact_id")
+  contact   Contact    @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  ownerId   String     @map("owner_id")
+  owner     User       @relation(fields: [ownerId], references: [id])
+  title     String
+  dueDate   DateTime   @map("due_date")
+  status    TaskStatus @default(pending)
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@map("tasks")
+}
+
+model Quota {
+  id           String @id @default(cuid())
+  userId       String @map("user_id")
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month        Int
+  year         Int
+  targetAmount Float  @map("target_amount")
+
+  @@unique([userId, month, year])
+  @@map("quotas")
+}

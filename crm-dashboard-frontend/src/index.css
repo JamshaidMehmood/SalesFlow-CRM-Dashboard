@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-brand-50: #fff4f1;
+  --color-brand-100: #ffe4dc;
+  --color-brand-200: #ffc9ba;
+  --color-brand-300: #ffa48f;
+  --color-brand-400: #ff8568;
+  --color-brand-500: #ff7a59;
+  --color-brand-600: #e85d3a;
+  --color-brand-700: #c4472a;
+  --color-brand-800: #9a3822;
+  --color-brand-900: #7d2f1e;
+
+  --color-teal-500: #0091ae;
+  --color-teal-600: #007a94;
+
+  --color-sidebar: #2d3e50;
+  --color-sidebar-hover: #34495e;
+  --color-sidebar-active: #1a252f;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  @keyframes confetti-fall {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(400px) rotate(720deg);
+      opacity: 0;
+    }
+  }
+
+  .animate-confetti {
+    animation: confetti-fall 3s ease-out forwards;
+  }
+}

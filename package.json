@@ -1,0 +1,12 @@
+{
+  "name": "salesflow-crm-dashboard",
+  "private": true,
+  "scripts": {
+    "dev:backend": "npm run dev --prefix crm-dashboard-backend",
+    "dev:frontend": "npm run dev --prefix crm-dashboard-frontend",
+    "install:all": "npm install --prefix crm-dashboard-backend && npm install --prefix crm-dashboard-frontend",
+    "setup:db": "bash scripts/setup-db.sh",
+    "db:setup": "npm run db:setup --prefix crm-dashboard-backend",
+    "db:seed": "npm run db:seed --prefix crm-dashboard-backend"
+  }
+}

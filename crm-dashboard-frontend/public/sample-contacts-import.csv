@@ -1,0 +1,10 @@
+First Name,Last Name,Email,Phone,Company,Job Title,Status,Lead Source,Tags
+Alice 1,Johnson,alice.johnson@example.com,555-0101,Northwind Traders,Marketing Director,lead,Referral,VIP
+Bob 1,Williams,bob.williams@example.com,555-0102,Contoso Ltd,Account Executive,prospect,Website Form,Referral
+Carol 1,Davis,carol.davis@example.com,555-0103,Fabrikam Inc,CEO,lead,Ad Campaign,
+David 1,Miller,david.miller@example.com,555-0104,Globex Corp,Sales Lead,prospect,Cold Outreach,Cold Lead
+Emma 1,Wilson,emma.wilson@example.com,555-0105,Initech,Product Manager,customer,Event,VIP
+Frank 1,Moore,frank.moore@example.com,555-0106,Umbrella Co,CTO,lead,Referral,
+Grace 1,Taylor,grace.taylor@example.com,555-0107,Stark Industries,VP Sales,prospect,Website Form,
+Henry 1,Anderson,,555-0108,Wayne Enterprises,CFO,lead,Other,
+Ivy 1,Thomas,ivy.thomas@example.com,555-0109,Oscorp,Operations Manager,inactive,Cold Outreach,
