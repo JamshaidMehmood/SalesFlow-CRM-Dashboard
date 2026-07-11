@@ -16,10 +16,13 @@ services:
     plan: free
     # Build the frontend, install the backend, generate the Prisma client, sync
     # the schema, then seed demo data on first deploy (only if the DB is empty).
+    # NODE_ENV=production makes npm skip devDependencies, but the build needs
+    # them (vite, @vitejs/plugin-react, tailwind, prisma CLI) -> force with
+    # --include=dev on both installs.
     buildCommand: >-
-      npm install --prefix crm-dashboard-frontend &&
+      npm install --include=dev --prefix crm-dashboard-frontend &&
       npm run build --prefix crm-dashboard-frontend &&
-      npm install --prefix crm-dashboard-backend &&
+      npm install --include=dev --prefix crm-dashboard-backend &&
       npx --prefix crm-dashboard-backend prisma generate --schema crm-dashboard-backend/prisma/schema.prisma &&
       npx --prefix crm-dashboard-backend prisma db push --schema crm-dashboard-backend/prisma/schema.prisma --accept-data-loss &&
       node crm-dashboard-backend/prisma/seed-if-empty.js
