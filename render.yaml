@@ -14,14 +14,15 @@ services:
     name: salesflow-crm-jamshaid
     runtime: node
     plan: free
-    # Build the frontend, install the backend, generate the Prisma client, and
-    # sync the schema to the fresh database.
+    # Build the frontend, install the backend, generate the Prisma client, sync
+    # the schema, then seed demo data on first deploy (only if the DB is empty).
     buildCommand: >-
       npm install --prefix crm-dashboard-frontend &&
       npm run build --prefix crm-dashboard-frontend &&
       npm install --prefix crm-dashboard-backend &&
       npx --prefix crm-dashboard-backend prisma generate --schema crm-dashboard-backend/prisma/schema.prisma &&
-      npx --prefix crm-dashboard-backend prisma db push --schema crm-dashboard-backend/prisma/schema.prisma --accept-data-loss
+      npx --prefix crm-dashboard-backend prisma db push --schema crm-dashboard-backend/prisma/schema.prisma --accept-data-loss &&
+      node crm-dashboard-backend/prisma/seed-if-empty.js
     startCommand: npm start --prefix crm-dashboard-backend
     healthCheckPath: /api/health
     envVars:

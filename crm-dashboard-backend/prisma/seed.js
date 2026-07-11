@@ -382,11 +382,18 @@ async function main() {
   console.log('  Sales: sales@example.com / password123');
 }
 
-main()
-  .catch((e) => {
-    console.error('Seed failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+export { main };
+
+// Only auto-run the full (destructive) seed when this file is executed directly
+// (e.g. `npm run db:seed`). When imported (see seed-if-empty.js) it stays inert.
+const invokedDirectly = process.argv[1]?.endsWith('seed.js');
+if (invokedDirectly) {
+  main()
+    .catch((e) => {
+      console.error('Seed failed:', e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}
