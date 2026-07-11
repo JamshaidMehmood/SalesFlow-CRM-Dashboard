@@ -46,4 +46,4 @@ services:
       # this client's "Authorized JavaScript origins" in Google Cloud Console,
       # or Google will block the sign-in with an origin mismatch.
       - key: GOOGLE_CLIENT_ID
-        value: "533214155192-e4l7prqseb9g850i2ha6f2jjhuq1voh4.apps.googleusercontent.com"
+        value: "999013065343-huripnc9ieta4a8cetmu7lokefmrp9gq.apps.googleusercontent.com"
