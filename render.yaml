@@ -11,7 +11,7 @@ databases:
 
 services:
   - type: web
-    name: salesflow-crm
+    name: salesflow-crm-jamshaid
     runtime: node
     plan: free
     # Build the frontend, install the backend, generate the Prisma client, and
