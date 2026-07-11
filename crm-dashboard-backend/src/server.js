@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.js';
 import contactsRoutes from './routes/contacts.js';
 import dealsRoutes from './routes/deals.js';
@@ -26,6 +28,9 @@ import prisma from './utils/prisma.js';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -34,6 +39,11 @@ const allowedOrigins = [
   'http://127.0.0.1:5173',
   'http://localhost:5174',
   'http://127.0.0.1:5174',
+  // Extra production origins, comma-separated (only needed if the frontend is
+  // ever hosted on a different domain than this API).
+  ...(process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean)
+    : []),
 ];
 
 app.use(cors({ origin: allowedOrigins }));
@@ -75,9 +85,25 @@ app.use('/api/teams', teamsRoutes);
 app.use('/api/territories', territoriesRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 
-app.use((_req, res) => {
+// Unknown API routes always return JSON (never the SPA shell).
+app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
+
+// In production, serve the built frontend from this same service so the app is
+// same-origin (no CORS) and the client's relative "/api" calls just work.
+const clientDist = path.resolve(__dirname, '../../crm-dashboard-frontend/dist');
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(clientDist));
+  // SPA fallback: send index.html for any non-API, non-asset route.
+  app.use((_req, res) => {
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+} else {
+  app.use((_req, res) => {
+    res.status(404).json({ error: 'Route not found' });
+  });
+}
 
 app.use((err, _req, res, _next) => {
   if (err.type === 'entity.too.large') {
