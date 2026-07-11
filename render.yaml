@@ -35,7 +35,11 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
-      # Optional: set to your Google OAuth Client ID to enable Google Sign-In.
-      # Leave unset to use email/password login only.
+      # Google OAuth Client ID (public, not a secret) enables Google Sign-In.
+      # The backend exposes it at /api/auth/config and the frontend reads it at
+      # runtime, so no frontend rebuild is needed to change it.
+      # NOTE: add your deployed URL (e.g. https://salesflow-crm.onrender.com) to
+      # this client's "Authorized JavaScript origins" in Google Cloud Console,
+      # or Google will block the sign-in with an origin mismatch.
       - key: GOOGLE_CLIENT_ID
-        sync: false
+        value: "533214155192-e4l7prqseb9g850i2ha6f2jjhuq1voh4.apps.googleusercontent.com"
